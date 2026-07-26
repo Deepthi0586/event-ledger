@@ -3,12 +3,11 @@ services:
     build:
       context: ./account-service
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
-    environment:
-      SPRING_APPLICATION_NAME: event-gateway
-      ACCOUNT_SERVICE_BASE_URL:
-        http://account-service:8081
+
+    # Internal service - only accessible to other containers
+    expose:
+      - "8081"
+
     healthcheck:
       test:
         [
@@ -24,14 +23,18 @@ services:
     build:
       context: ./event-gateway
       dockerfile: Dockerfile
+
+    # Public API
     ports:
       - "8080:8080"
+
     environment:
-      SPRING_APPLICATION_NAME: event-gateway
       ACCOUNT_SERVICE_BASE_URL: http://account-service:8081
+
     depends_on:
       account-service:
         condition: service_healthy
+
     healthcheck:
       test:
         [

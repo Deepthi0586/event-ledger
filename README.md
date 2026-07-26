@@ -159,13 +159,14 @@ Build and start both services:
 docker compose up --build
 ```
 
-The Event Gateway resolves the Account Service using:
+The Event Gateway resolves the Account Service through an externalized configuration property:
 
 ```properties
 account-service.base-url=${ACCOUNT_SERVICE_BASE_URL:http://localhost:8081}
 ```
 
-This allows the same application to run both locally and inside Docker without code changes.
+- When running locally, the default value (`http://localhost:8081`) is used.
+- When running with Docker Compose, the `ACCOUNT_SERVICE_BASE_URL` environment variable overrides the default and points to `http://account-service:8081`.
 
 ---
 
