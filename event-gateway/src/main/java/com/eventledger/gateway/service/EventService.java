@@ -3,6 +3,7 @@ package com.eventledger.gateway.service;
 import com.eventledger.gateway.model.Event;
 import com.eventledger.gateway.model.EventRequest;
 import com.eventledger.gateway.model.EventResponse;
+import com.eventledger.gateway.model.EventSubmissionResult;
 import com.eventledger.gateway.repository.EventRepository;
 import com.eventledger.gateway.util.StructuredLogger;
 import com.eventledger.gateway.util.TracingConfig;
@@ -32,7 +33,7 @@ public class EventService {
     private final TracingConfig.TraceIdGenerator traceIdGenerator;
     private final ObjectMapper objectMapper;
 
-    public EventResponse submitEvent(EventRequest request) {
+    public EventSubmissionResult submitEvent(EventRequest request) {
         String traceId = traceIdGenerator.generate();
 
         try {
@@ -54,8 +55,12 @@ public class EventService {
                         )
                 );
 
-                // Idempotency: do not create or apply the transaction again.
-                return mapToResponse(existing);
+                // Duplicate submission:
+                // return the original event without applying it again.
+                return new EventSubmissionResult(
+                        mapToResponse(existing),
+                        false
+                );
             }
 
             Event event = createEventFromRequest(request);
@@ -81,7 +86,11 @@ public class EventService {
                         )
                 );
 
-                return mapToResponse(appliedEvent);
+                // Newly created event.
+                return new EventSubmissionResult(
+                        mapToResponse(appliedEvent),
+                        true
+                );
 
             } catch (AccountServiceUnavailableException exception) {
                 savedEvent.setStatus(Event.EventStatus.FAILED);
@@ -98,7 +107,6 @@ public class EventService {
                         )
                 );
 
-                // A global exception handler should map this to HTTP 503.
                 throw exception;
             }
 
@@ -273,13 +281,13 @@ public class EventService {
         try {
             return objectMapper.readValue(metadata, Object.class);
         } catch (JsonProcessingException exception) {
-            // Preserve stored content rather than failing a GET request.
             return metadata;
         }
     }
 
     /**
-     * Unlike Map.of(), HashMap allows nullable values.
+     * HashMap is used instead of Map.of() because Map.of()
+     * rejects null keys and values.
      */
     private Map<String, Object> context(Object... keyValues) {
         Map<String, Object> values = new HashMap<>();
