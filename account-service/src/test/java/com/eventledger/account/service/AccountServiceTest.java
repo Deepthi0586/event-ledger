@@ -49,7 +49,7 @@ class AccountServiceTest {
         transactionRequest.setAccountId(ACCOUNT_ID);
         transactionRequest.setEventId(EVENT_ID);
         transactionRequest.setType("CREDIT");
-        transactionRequest.setAmount("100.00");
+        transactionRequest.setAmount(new BigDecimal("100.00"));
     }
 
     @Test
@@ -84,7 +84,7 @@ class AccountServiceTest {
         Account account = existingAccount("500.00");
 
         transactionRequest.setType("DEBIT");
-        transactionRequest.setAmount("100.00");
+        transactionRequest.setAmount(new BigDecimal("100.00"));
 
         when(transactionRepository.findByEventId(EVENT_ID))
                 .thenReturn(Optional.empty());
@@ -167,14 +167,13 @@ class AccountServiceTest {
         creditRequest.setAccountId(ACCOUNT_ID);
         creditRequest.setEventId("evt-credit-001");
         creditRequest.setType("CREDIT");
-        creditRequest.setAmount("200.00");
+        creditRequest.setAmount(new BigDecimal("200.00"));
 
         TransactionRequest debitRequest = new TransactionRequest();
         debitRequest.setAccountId(ACCOUNT_ID);
         debitRequest.setEventId("evt-debit-001");
         debitRequest.setType("DEBIT");
-        debitRequest.setAmount("50.00");
-
+        debitRequest.setAmount(new BigDecimal("50.00"));
         when(transactionRepository.findByEventId("evt-credit-001"))
                 .thenReturn(Optional.empty());
 

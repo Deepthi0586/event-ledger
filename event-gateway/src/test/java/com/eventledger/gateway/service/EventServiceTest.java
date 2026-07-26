@@ -75,7 +75,7 @@ class EventServiceTest {
         validRequest.setEventId("evt-001");
         validRequest.setAccountId("acct-123");
         validRequest.setType("CREDIT");
-        validRequest.setAmount("100.00");
+        validRequest.setAmount(new BigDecimal("100.00"));
         validRequest.setCurrency("USD");
         validRequest.setEventTimestamp("2026-05-15T14:02:11Z");
     }
@@ -327,8 +327,7 @@ class EventServiceTest {
     @Test
     void submitEventShouldRejectZeroAmount() {
         stubTraceId();
-        validRequest.setAmount("0");
-
+        validRequest.setAmount(BigDecimal.ZERO);
         IllegalArgumentException exception =
                 assertThrows(
                         IllegalArgumentException.class,
@@ -347,7 +346,7 @@ class EventServiceTest {
     @Test
     void submitEventShouldRejectNegativeAmount() {
         stubTraceId();
-        validRequest.setAmount("-50.00");
+        validRequest.setAmount(new BigDecimal("-50.00"));
 
         IllegalArgumentException exception =
                 assertThrows(

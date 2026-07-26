@@ -194,7 +194,15 @@ public class EventService {
             );
         }
 
-        parseAmount(request.getAmount());
+        if (request.getAmount() == null) {
+            throw new IllegalArgumentException("amount is required");
+        }
+
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "amount must be greater than 0"
+            );
+        }
 
         if (request.getCurrency() == null
                 || request.getCurrency().isBlank()) {
@@ -217,29 +225,6 @@ public class EventService {
         }
     }
 
-    private BigDecimal parseAmount(String rawAmount) {
-        if (rawAmount == null || rawAmount.isBlank()) {
-            throw new IllegalArgumentException("amount is required");
-        }
-
-        try {
-            BigDecimal amount = new BigDecimal(rawAmount);
-
-            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException(
-                        "amount must be greater than 0"
-                );
-            }
-
-            return amount;
-
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(
-                    "amount must be a valid number"
-            );
-        }
-    }
-
     private Event createEventFromRequest(EventRequest request) {
         Event event = new Event();
 
@@ -248,7 +233,7 @@ public class EventService {
         event.setType(
                 Event.TransactionType.valueOf(request.getType())
         );
-        event.setAmount(parseAmount(request.getAmount()));
+        event.setAmount(request.getAmount());
         event.setCurrency(request.getCurrency());
         event.setEventTimestamp(
                 Instant.parse(request.getEventTimestamp())
