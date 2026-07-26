@@ -9,6 +9,7 @@ import com.eventledger.gateway.util.StructuredLogger;
 import com.eventledger.gateway.util.TracingConfig;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,11 +28,21 @@ public class EventService {
 
     private static final String SERVICE_NAME = "event-gateway";
 
+    private static final String SUBMITTED_EVENTS_METRIC =
+            "eventledger.events.submitted";
+
+    private static final String DUPLICATE_EVENTS_METRIC =
+            "eventledger.events.duplicate";
+
+    private static final String FAILED_EVENTS_METRIC =
+            "eventledger.events.failed";
+
     private final EventRepository eventRepository;
     private final AccountServiceClient accountServiceClient;
     private final StructuredLogger structuredLogger;
     private final TracingConfig.TraceIdGenerator traceIdGenerator;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     public EventSubmissionResult submitEvent(EventRequest request) {
         String traceId = traceIdGenerator.generate();
@@ -45,6 +56,8 @@ public class EventService {
             if (existingEvent.isPresent()) {
                 Event existing = existingEvent.get();
 
+                meterRegistry.counter(DUPLICATE_EVENTS_METRIC).increment();
+
                 structuredLogger.info(
                         traceId,
                         SERVICE_NAME,
@@ -55,8 +68,6 @@ public class EventService {
                         )
                 );
 
-                // Duplicate submission:
-                // return the original event without applying it again.
                 return new EventSubmissionResult(
                         mapToResponse(existing),
                         false
@@ -75,6 +86,8 @@ public class EventService {
                 savedEvent.setStatus(Event.EventStatus.APPLIED);
                 Event appliedEvent = eventRepository.save(savedEvent);
 
+                meterRegistry.counter(SUBMITTED_EVENTS_METRIC).increment();
+
                 structuredLogger.info(
                         traceId,
                         SERVICE_NAME,
@@ -86,7 +99,6 @@ public class EventService {
                         )
                 );
 
-                // Newly created event.
                 return new EventSubmissionResult(
                         mapToResponse(appliedEvent),
                         true
@@ -95,6 +107,8 @@ public class EventService {
             } catch (AccountServiceUnavailableException exception) {
                 savedEvent.setStatus(Event.EventStatus.FAILED);
                 eventRepository.save(savedEvent);
+
+                meterRegistry.counter(FAILED_EVENTS_METRIC).increment();
 
                 structuredLogger.error(
                         traceId,
@@ -285,10 +299,6 @@ public class EventService {
         }
     }
 
-    /**
-     * HashMap is used instead of Map.of() because Map.of()
-     * rejects null keys and values.
-     */
     private Map<String, Object> context(Object... keyValues) {
         Map<String, Object> values = new HashMap<>();
 

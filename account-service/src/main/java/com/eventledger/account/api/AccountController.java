@@ -64,12 +64,4 @@ public class AccountController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of(
-            "status", "UP",
-            "service", "account-service"
-        ));
-    }
 }

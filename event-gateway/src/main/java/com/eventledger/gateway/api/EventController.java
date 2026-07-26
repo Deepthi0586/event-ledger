@@ -50,12 +50,4 @@ public class EventController {
         List<EventResponse> responses = eventService.getEventsByAccount(account);
         return ResponseEntity.ok(responses);
     }
-    
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of(
-            "status", "UP",
-            "service", "event-gateway"
-        ));
-    }
 }
