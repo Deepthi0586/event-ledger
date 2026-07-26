@@ -34,23 +34,48 @@ class AccountServiceConsumerPactTest {
             PactDslWithProvider builder) {
 
         PactDslJsonBody requestBody = new PactDslJsonBody()
-                .stringValue("eventId", "evt-contract-001")
-                .stringValue("accountId", "acct-123")
-                .stringValue("type", "CREDIT")
-                .decimalType("amount", 100.00)
-                .stringValue("currency", "USD")
-                .stringValue(
+                .stringMatcher(
+                        "eventId",
+                        "evt-[A-Za-z0-9-]+",
+                        "evt-contract-001"
+                )
+                .stringMatcher(
+                        "accountId",
+                        "acct-[A-Za-z0-9-]+",
+                        "acct-123"
+                )
+                .stringMatcher(
+                        "type",
+                        "CREDIT|DEBIT",
+                        "CREDIT"
+                )
+                .decimalType(
+                        "amount",
+                        100.00
+                )
+                .stringMatcher(
+                        "currency",
+                        "[A-Z]{3}",
+                        "USD"
+                )
+                .stringMatcher(
                         "eventTimestamp",
+                        "\\d{4}-\\d{2}-\\d{2}T"
+                                + "\\d{2}:\\d{2}:\\d{2}Z",
                         "2026-05-15T14:02:11Z"
                 );
 
         PactDslJsonBody responseBody = new PactDslJsonBody()
-                .stringValue("status", "success");
+                .stringMatcher(
+                        "status",
+                        "success",
+                        "success"
+                );
 
         return builder
                 .given("account acct-123 can receive transactions")
                 .uponReceiving(
-                        "a credit transaction from Event Gateway"
+                        "a valid transaction from Event Gateway"
                 )
                 .path("/accounts/acct-123/transactions")
                 .method("POST")
